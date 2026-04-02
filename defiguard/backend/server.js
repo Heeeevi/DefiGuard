@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
-require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -17,25 +16,47 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.post('/api/chat', (req, res) => {
   const { text } = req.body;
   
-  // Simulate processing delay (Qwen inference on Nosana GPU)
+  // Simulate processing delay for the terminal animation
   setTimeout(() => {
-    let reply = "";
+    let reply = {};
     const lowercaseText = text.toLowerCase();
     
-    // Simulate smart contract parsing logic or tx logic
-    if (lowercaseText.includes("0x") || lowercaseText.includes("contract")) {
-      reply = "🛑 **DANGER ALERT!** 🛑\n\nI just scanned that contract. It has a hidden `blacklist` function that allows the owner to freeze your money forever. The high APY is just bait.\n\n**ELI5 Translation:** Imagine putting your money in a bank that promises you free money, but the bank manager has a secret button to lock the doors and walk away with everything.\n\nMy recommendation: **Do not interact with this contract.**";
+    if (lowercaseText.includes("0x") || lowercaseText.includes("contract") || lowercaseText.includes("token")) {
+      reply = {
+        verdict: "DANGER",
+        score: 92,
+        auditStatus: "Unverified / Cloned Code",
+        findings: [
+          "🚨 Found hidden `blacklist` array allowing owner to freeze wallets.",
+          "🚨 Mint function is open, allowing unlimited token generation by creator.",
+          "⚠️ 98% of liquidity is held in a single unlocked wallet."
+        ],
+        explanation: "Imagine putting your money in a bank that promises you free money, but the bank manager has a secret button to lock the doors and walk away with everything. The high APY is just bait. Do not interact with this contract."
+      };
     } else if (lowercaseText.includes("swap") || lowercaseText.length > 30) {
-      reply = "✅ **SAFE TRANSACTION** ✅\n\nI checked that signature. It is a standard swap transaction on a decentralized exchange.\n\n**What's actually happening:**\nYou are giving up exactly 1 Token, and in return, you are receiving the current market rate for the requested asset. There are no hidden fees or weird permissions being granted to unknown parties. You're good to go!";
+      reply = {
+        verdict: "SAFE",
+        score: 12,
+        auditStatus: "Verified Open-Source",
+        findings: [
+          "✅ Standard implementation matching known DEX router addresses.",
+          "✅ No unexpected permissions requested from user.",
+          "✅ State changes are strictly bound to input amounts."
+        ],
+        explanation: "You are giving up exactly 1 Token, and in return, you are receiving the current market rate for the requested asset. There are no hidden fees or weird permissions being granted to unknown parties. You're good to go!"
+      };
     } else {
-      reply = "Hey! I'm DeFiGuard. Drop a Smart Contract address, a transaction signature, or any confusing Web3 code here, and I'll translate it into plain English for you.";
+      reply = {
+        verdict: "UNKNOWN",
+        score: 0,
+        auditStatus: "N/A",
+        findings: ["Input does not resemble a valid Smart Contract address, transaction hash, or source code."],
+        explanation: "Hey! I'm DeFiGuard. Drop a Smart Contract address (e.g. 0x...), a transaction signature, or any confusing Web3 code here, and I'll translate it into plain English for you."
+      };
     }
 
-    res.json({
-      user: "DeFiGuard",
-      content: { text: reply }
-    });
-  }, 1500); // 1.5s delay to mimic LLM typing
+    res.json(reply);
+  }, 4000); // 4 seconds delay to allow terminal animations to play out
 });
 
 // Catch-all route to serve the React app

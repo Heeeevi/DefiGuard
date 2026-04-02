@@ -247,3 +247,98 @@ button:disabled {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* History Bar Styling */
+.history-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.history-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.history-tags {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.history-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-tag:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.history-tag.bg-danger {
+  border-color: rgba(255, 51, 102, 0.4);
+  color: #ffa1b5;
+}
+
+.history-tag.bg-safe {
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #a8ffcf;
+}
+
+/* How-To Button & Panel */
+.how-to-btn {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: auto;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+  box-shadow: none;
+  z-index: 10;
+}
+
+.how-to-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 240, 255, 0.2);
+}
+
+.how-to-panel {
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 240, 255, 0.15);
+  animation: slideUp 0.3s ease forwards;
+}
+
+.how-to-panel h3 {
+  color: var(--primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.how-to-panel p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #d0d0e0;
+} 

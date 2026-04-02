@@ -8,18 +8,19 @@ interface Metric {
 }
 
 interface AIResult {
-  verdict: 'DANGER' | 'SAFE' | 'UNKNOWN';
+  verdict: 'DANGER' | 'WARN' | 'SAFE' | 'UNKNOWN';
   score: number;
   auditStatus: string;
+  network?: string;
+  trace?: string;
   metrics?: Metric[];
-  findings?: string[]; // Kept for backwards compatibility just in case
   explanation: string;
 }
 
 interface ScanHistory {
   date: string;
   address: string;
-  verdict: 'DANGER' | 'SAFE' | 'UNKNOWN';
+  verdict: 'DANGER' | 'WARN' | 'SAFE' | 'UNKNOWN';
 }
 
 const SCAN_STEPS = [
@@ -47,7 +48,7 @@ function App() {
           if (prev < SCAN_STEPS.length - 1) return prev + 1;
           return prev;
         });
-      }, 600);
+      }, 400); // slightly faster for UX
     } else {
       setCurrentStepIndex(0);
     }
@@ -65,9 +66,7 @@ function App() {
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: input })
       });
 
@@ -121,7 +120,7 @@ function App() {
               <span className="history-label">Recent Scans:</span>
               <div className="history-tags">
                  {scanHistory.map((hist, idx) => (
-                    <div key={idx} className={`history-tag ${hist.verdict === 'DANGER' ? 'bg-danger' : hist.verdict === 'SAFE' ? 'bg-safe' : ''}`}
+                    <div key={idx} className={`history-tag ${hist.verdict === 'DANGER' ? 'bg-danger' : hist.verdict === 'SAFE' ? 'bg-safe' : 'bg-warn'}`}
                          onClick={() => setInput(hist.address)} title="Click to repaste">
                        <span>{hist.address}</span>
                        <span style={{opacity: 0.7, fontSize: '0.75rem'}}>{hist.verdict}</span>
@@ -164,16 +163,32 @@ function App() {
 
         {status === 'success' && response && (
           <div className="result-card">
-             <div className="risk-header">
+             
+             {/* Dynamic Network & Trace Info Header */}
+             {response.network && (
+               <div className="top-meta-bar">
+                 <div className="net-badge">🌐 Network: <strong>{response.network}</strong></div>
+                 {response.trace && <div className="trace-info">🔎 {response.trace}</div>}
+               </div>
+             )}
+
+             <div className="risk-header" style={{ alignItems: 'flex-start' }}>
                 <div>
                    <div style={{ fontSize: '0.9rem', color: '#8a8a9a', textTransform: 'uppercase' }}>Risk Score</div>
-                   <div className={`score-badge ${response.verdict === 'DANGER' ? 'score-danger' : response.verdict === 'SAFE' ? 'score-safe' : 'score-unknown'}`}>
+                   <div className={`score-badge ${response.verdict === 'DANGER' ? 'score-danger' : response.verdict === 'SAFE' ? 'score-safe' : 'score-warn'}`}>
                       {response.score || 0}/100
                    </div>
+                   {/* Score Legend */}
+                   <div className="score-legend">
+                      <span className={response.score <= 30 ? 'active' : ''}>0-30: Safe</span> | 
+                      <span className={response.score > 30 && response.score <= 70 ? 'active' : ''}> 31-70: Caution</span> | 
+                      <span className={response.score > 70 ? 'active' : ''}> 71-100: Danger</span>
+                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+
+                <div style={{ textAlign: 'right', marginTop: '4px' }}>
                    <div style={{ fontSize: '0.9rem', color: '#8a8a9a', textTransform: 'uppercase' }}>AI Verdict</div>
-                   <div className={`verdict-tag ${response.verdict === 'DANGER' ? 'score-danger' : 'score-safe'}`}>
+                   <div className={`verdict-tag ${response.verdict === 'DANGER' ? 'score-danger' : response.verdict === 'SAFE' ? 'score-safe' : 'score-warn'}`}>
                       {response.verdict || 'UNKNOWN'}
                    </div>
                    <div style={{ fontSize: '0.85rem', marginTop: '4px' }}>Status: {response.auditStatus || 'N/A'}</div>

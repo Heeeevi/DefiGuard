@@ -424,3 +424,51 @@ button:disabled {
   color: #a0a0b0;
   line-height: 1.4;
 }
+
+/* Trace & Network Bar */
+.top-meta-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.8rem;
+  margin-bottom: -0.5rem;
+  font-size: 0.85rem;
+}
+
+.net-badge {
+  background: rgba(112, 0, 255, 0.2);
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(112, 0, 255, 0.4);
+  color: #d0b0ff;
+}
+
+.trace-info {
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Score Legend */
+.score-legend {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #555;
+}
+
+.score-legend span.active {
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Warnings and unknown labels */
+.score-warn { 
+  color: var(--warning); 
+  box-shadow: 0 0 15px rgba(255, 170, 0, 0.2); 
+}
+
+.history-tag.bg-warn {
+  border-color: rgba(255, 170, 0, 0.4);
+  color: #ffd085;
+}

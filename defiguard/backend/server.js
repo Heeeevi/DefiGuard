@@ -26,10 +26,11 @@ app.post('/api/chat', (req, res) => {
         verdict: "DANGER",
         score: 92,
         auditStatus: "Unverified / Cloned Code",
-        findings: [
-          "🚨 Found hidden `blacklist` array allowing owner to freeze wallets.",
-          "🚨 Mint function is open, allowing unlimited token generation by creator.",
-          "⚠️ 98% of liquidity is held in a single unlocked wallet."
+        metrics: [
+           { kpi: "Honeypot Risk", status: "FAIL", desc: "Detected strict restrictions on sell functions (users cannot sell)." },
+           { kpi: "Centralization", status: "FAIL", desc: "Owner commands a hidden `blacklist` array allowing arbitrary wallet freezing." },
+           { kpi: "Liquidity Lock", status: "WARN", desc: "98% of liquidity volume is unvested and held in a single EOA wallet." },
+           { kpi: "Code Verifiability", status: "WARN", desc: "Source code resembles popular router templates but lacks official deployment verification." }
         ],
         explanation: "Imagine putting your money in a bank that promises you free money, but the bank manager has a secret button to lock the doors and walk away with everything. The high APY is just bait. Do not interact with this contract."
       };
@@ -38,10 +39,11 @@ app.post('/api/chat', (req, res) => {
         verdict: "SAFE",
         score: 12,
         auditStatus: "Verified Open-Source",
-        findings: [
-          "✅ Standard implementation matching known DEX router addresses.",
-          "✅ No unexpected permissions requested from user.",
-          "✅ State changes are strictly bound to input amounts."
+        metrics: [
+           { kpi: "Honeypot Risk", status: "PASS", desc: "Sell paths are completely unimpeded. Native routing verified." },
+           { kpi: "Centralization", status: "PASS", desc: "Ownership renounced. No administrative backdoors or freezing parameters exist." },
+           { kpi: "Liquidity Lock", status: "PASS", desc: "Majority of liquidity pool tokens are permanently burned or timelocked." },
+           { kpi: "Code Verifiability", status: "PASS", desc: "Source code matches known standard libraries (e.g., Uniswap/Raydium)." }
         ],
         explanation: "You are giving up exactly 1 Token, and in return, you are receiving the current market rate for the requested asset. There are no hidden fees or weird permissions being granted to unknown parties. You're good to go!"
       };
@@ -50,7 +52,9 @@ app.post('/api/chat', (req, res) => {
         verdict: "UNKNOWN",
         score: 0,
         auditStatus: "N/A",
-        findings: ["Input does not resemble a valid Smart Contract address, transaction hash, or source code."],
+        metrics: [
+           { kpi: "Analysis Status", status: "WARN", desc: "Input signature not recognized as parsable bytecode or tx hash." }
+        ],
         explanation: "Hey! I'm DeFiGuard. Drop a Smart Contract address (e.g. 0x...), a transaction signature, or any confusing Web3 code here, and I'll translate it into plain English for you."
       };
     }

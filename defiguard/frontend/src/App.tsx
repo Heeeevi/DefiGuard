@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 
+interface Metric {
+  kpi: string;
+  status: 'PASS' | 'WARN' | 'FAIL';
+  desc: string;
+}
+
 interface AIResult {
   verdict: 'DANGER' | 'SAFE' | 'UNKNOWN';
   score: number;
   auditStatus: string;
-  findings: string[];
+  metrics?: Metric[];
+  findings?: string[]; // Kept for backwards compatibility just in case
   explanation: string;
 }
 
@@ -53,7 +60,7 @@ function App() {
     setStatus('scanning');
     setResponse(null);
     setCurrentStepIndex(0);
-    setShowHowTo(false); // Sembunyikan tutorial saat mulai
+    setShowHowTo(false);
 
     try {
       const res = await fetch('/api/chat', {
@@ -70,13 +77,12 @@ function App() {
       setResponse(data);
       setStatus('success');
       
-      // Menambah ke tabel riwayat (Format alamat dipotong agar muat)
       if (data.verdict) {
          setScanHistory(prev => [{
             date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             address: input.length > 15 ? input.slice(0, 6) + "..." + input.slice(-4) : input,
             verdict: data.verdict
-         }, ...prev].slice(0, 5)); // Simpan maksimum 5 recent history
+         }, ...prev].slice(0, 5));
       }
 
     } catch (err) {
@@ -156,7 +162,6 @@ function App() {
            </div>
         )}
 
-        {/* Bugfix Optional Chaining (?.) preventing map() crashes if findings is missing from old API */}
         {status === 'success' && response && (
           <div className="result-card">
              <div className="risk-header">
@@ -175,12 +180,18 @@ function App() {
                 </div>
              </div>
 
-             {response.findings && response.findings.length > 0 && (
+             {response.metrics && response.metrics.length > 0 && (
                 <div>
-                   <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f0f0f5', marginBottom: '8px' }}>Objective Findings</div>
-                   <div className="findings-list">
-                      {response.findings.map((f, i) => (
-                         <div key={i}>{f}</div>
+                   <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f0f0f5', marginBottom: '12px' }}>Security Metrics Matrix</div>
+                   <div className="metric-grid">
+                      {response.metrics.map((m, i) => (
+                         <div key={i} className={`metric-card border-${m.status.toLowerCase()}`}>
+                            <div className="metric-header">
+                               <span className="metric-title">{m.kpi}</span>
+                               <span className={`status-badge badge-${m.status.toLowerCase()}`}>{m.status}</span>
+                            </div>
+                            <div className="metric-desc">{m.desc}</div>
+                         </div>
                       ))}
                    </div>
                 </div>

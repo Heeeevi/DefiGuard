@@ -342,3 +342,85 @@ button:disabled {
   line-height: 1.5;
   color: #d0d0e0;
 } 
+
+/* Security Metrics Grid */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: transform 0.2s;
+}
+
+.metric-card.border-fail {
+  border-left: 4px solid var(--danger);
+  background: linear-gradient(90deg, rgba(255, 51, 102, 0.05) 0%, rgba(0,0,0,0) 100%);
+}
+
+.metric-card.border-pass {
+  border-left: 4px solid var(--success);
+  background: linear-gradient(90deg, rgba(0, 255, 136, 0.05) 0%, rgba(0,0,0,0) 100%);
+}
+
+.metric-card.border-warn {
+  border-left: 4px solid var(--warning);
+  background: linear-gradient(90deg, rgba(255, 170, 0, 0.05) 0%, rgba(0,0,0,0) 100%);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-title {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.badge-fail {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(255, 51, 102, 0.4);
+}
+
+.badge-pass {
+  background: rgba(0, 255, 136, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(0, 255, 136, 0.4);
+}
+
+.badge-warn {
+  background: rgba(255, 170, 0, 0.2);
+  color: var(--warning);
+  border: 1px solid rgba(255, 170, 0, 0.4);
+}
+
+.metric-desc {
+  font-size: 0.85rem;
+  color: #a0a0b0;
+  line-height: 1.4;
+}

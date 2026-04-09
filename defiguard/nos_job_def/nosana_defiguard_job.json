@@ -9,7 +9,7 @@
       "type": "container/run",
       "id": "defiguard-agent",
       "args": {
-        "image": "heeeevi/defiguard-agent:latest",
+        "image": "hafigas/defiguard-agent:latest",
         "ports": ["3000:3000", "3001:3001"],
         "env": {
           "OPENAI_API_KEY": "nosana",

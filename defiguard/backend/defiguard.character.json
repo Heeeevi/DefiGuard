@@ -1,7 +1,8 @@
 {
   "name": "DeFiGuard",
   "clients": ["direct"],
-  "modelProvider": "nosana",
+  "modelProvider": "openai",
+  "plugins": ["@elizaos/plugin-bootstrap", "@elizaos/plugin-openai"],
   "settings": {
     "voice": {
       "model": "en_US-male-medium"

@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // The port where ElizaOS local agent framework is running
-const ELIZA_PORT = 3000; 
+const ELIZA_PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -33,22 +33,28 @@ function cleanJsonResponse(rawText) {
 // REST Client Bridge pointing to Real ElizaOS
 app.post('/api/chat', async (req, res) => {
   const { text } = req.body;
-  
+
   if (!text || text.length < 5) {
-     return res.status(400).json({ error: "Invalid text input." });
+    return res.status(400).json({ error: "Invalid text input." });
   }
 
   try {
-    // 1. Fetch available agents from ElizaOS framework
+    // 1. Fetch available agents from ElizaOS v2 framework
+    // ElizaOS v2 returns: { success: true, data: [{ agentId, name, status }] }
     const agentsRes = await axios.get(`http://localhost:${ELIZA_PORT}/agents`);
-    const agents = agentsRes.data?.agents;
-    
-    if (!agents || agents.length === 0) {
+
+    // Support both v1 format { agents: [] } and v2 format { data: [] }
+    const agents = agentsRes.data?.data || agentsRes.data?.agents || agentsRes.data;
+
+    if (!agents || !Array.isArray(agents) || agents.length === 0) {
       throw new Error("No ElizaOS agents are currently running.");
     }
 
-    // Usually grab the first available agent (DeFiGuard)
-    const agentId = agents[0].id;
+    // Grab the first available agent (DeFiGuard or default)
+    const agent = agents[0];
+    const agentId = agent.agentId || agent.id;
+
+    console.log(`Routing to ElizaOS agent: ${agent.name || 'unknown'} (${agentId})`);
 
     // 2. Forward the user request to the ElizaOS agent
     const messagePayload = {
@@ -58,16 +64,23 @@ app.post('/api/chat', async (req, res) => {
       userName: "user"
     };
 
-    const elizaRes = await axios.post(`http://localhost:${ELIZA_PORT}/${agentId}/message`, messagePayload);
-    
+    // ElizaOS v2 message endpoint: /agents/:agentId/message
+    const elizaRes = await axios.post(
+      `http://localhost:${ELIZA_PORT}/agents/${agentId}/message`,
+      messagePayload,
+      { timeout: 30000 }
+    );
+
     // Eliza's response is typically an array of generated text messages
-    // e.g. [ { user: 'DeFiGuard', text: '{ "verdict": "SAFE", ... }' } ]
-    if (!elizaRes.data || elizaRes.data.length === 0) {
+    const responseData = elizaRes.data?.data || elizaRes.data;
+    const messages = Array.isArray(responseData) ? responseData : [responseData];
+
+    if (!messages || messages.length === 0) {
       throw new Error("ElizaOS model returned an empty response.");
     }
 
-    const rawResponseText = elizaRes.data[0].text;
-    
+    const rawResponseText = messages[0].text;
+
     // 3. Parse JSON Strict Output
     const cleanedString = cleanJsonResponse(rawResponseText);
     const parsedJsonData = JSON.parse(cleanedString);
@@ -77,12 +90,12 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error("ElizaOS Bridge Error:", error.message);
-    
+
     // Fallback Mock Response just in case ElizaOS crashes or timeout during Live Demo
     console.log("Serving Fallback Deterministic Response from server.js...");
-    const dynamicScore = Math.abs(text.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)) % 101;
+    const dynamicScore = Math.abs(text.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)) % 101;
     const isDanger = dynamicScore > 70;
-    
+
     setTimeout(() => {
       res.json({
         verdict: isDanger ? "DANGER" : "SAFE",
@@ -91,13 +104,13 @@ app.post('/api/chat', async (req, res) => {
         network: text.toLowerCase().startsWith("0x") ? "Ethereum / EVM" : "Solana Network",
         trace: `Deployed: ${dynamicScore % 12 + 1} months ago | Analyzed on Nosana`,
         metrics: [
-           { kpi: "Honeypot Risk", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Detected strict restrictions on sell functions." : "Sell paths appear unimpeded." },
-           { kpi: "Centralization", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Owner commands a hidden generic blacklist." : "Ownership is decentralized/renounced." },
-           { kpi: "Liquidity Lock", status: "WARN", desc: "Liquidity is locked, but duration expires soon." },
-           { kpi: "Code Verifiability", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Source code resembles popular scams." : "Source code published and known." }
+          { kpi: "Honeypot Risk", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Detected strict restrictions on sell functions." : "Sell paths appear unimpeded." },
+          { kpi: "Centralization", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Owner commands a hidden generic blacklist." : "Ownership is decentralized/renounced." },
+          { kpi: "Liquidity Lock", status: "WARN", desc: "Liquidity is locked, but duration expires soon." },
+          { kpi: "Code Verifiability", status: isDanger ? "FAIL" : "PASS", desc: isDanger ? "Source code resembles popular scams." : "Source code published and known." }
         ],
-        explanation: isDanger 
-          ? "This contract holds critical centralization flaws. Imagine putting your money in a bank that promises you high APY, but the manager has a secret backdoor to freeze your wallet. The code pattern matches multiple known rugpulls. Do not interact!" 
+        explanation: isDanger
+          ? "This contract holds critical centralization flaws. Imagine putting your money in a bank that promises you high APY, but the manager has a secret backdoor to freeze your wallet. The code pattern matches multiple known rugpulls. Do not interact!"
           : "The code is clean. You are interacting with a standard, unimpeded contract. There are no hidden fees, no freezing backdoors, and the liquidity is appropriately managed. You are good to go!"
       });
     }, 2500);

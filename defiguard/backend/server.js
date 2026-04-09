@@ -56,30 +56,62 @@ app.post('/api/chat', async (req, res) => {
 
     console.log(`Routing to ElizaOS agent: ${agent.name || 'unknown'} (${agentId})`);
 
-    // 2. Forward the user request to the ElizaOS agent
-    const messagePayload = {
-      text: text,
-      roomId: "default-room",
-      userId: "user",
-      userName: "user"
-    };
+    // 2. ElizaOS v2 uses channel-based messaging
+    const serverId = "00000000-0000-0000-0000-000000000000";
+    
+    // 2a. Get or create a channel for DeFiGuard communication
+    let channelId;
+    const channelsRes = await axios.get(
+      `http://localhost:${ELIZA_PORT}/api/messaging/message-servers/${serverId}/channels`
+    );
+    const channels = channelsRes.data?.data?.channels || [];
+    const existingChannel = channels.find(ch => ch.name === "defiguard-bridge");
+    
+    if (existingChannel) {
+      channelId = existingChannel.id;
+    } else {
+      // Create a new channel
+      const createRes = await axios.post(
+        `http://localhost:${ELIZA_PORT}/api/messaging/message-servers/${serverId}/channels`,
+        { name: "defiguard-bridge", type: "DM" }
+      );
+      channelId = createRes.data?.data?.id || createRes.data?.data?.channel?.id;
+      
+      // Add the agent to this channel
+      await axios.post(
+        `http://localhost:${ELIZA_PORT}/api/messaging/channels/${channelId}/agents`,
+        { agentId: agentId }
+      ).catch(() => {});  // Ignore if agent already added
+    }
 
-    // ElizaOS v2 message endpoint: /api/agents/:id/message
-    const elizaRes = await axios.post(
-      `http://localhost:${ELIZA_PORT}/api/agents/${agentId}/message`, 
-      messagePayload,
+    // 2b. Send user message to the channel
+    const msgRes = await axios.post(
+      `http://localhost:${ELIZA_PORT}/api/messaging/channels/${channelId}/messages`,
+      {
+        content: `Analyze this smart contract address for security risks and return a JSON security report: ${text}`,
+        author_id: "user-defiguard",
+        source_type: "eliza_gui",
+        server_id: serverId,
+        metadata: { user_display_name: "DeFiGuard User" }
+      },
       { timeout: 30000 }
     );
 
-    // Eliza's response is typically an array of generated text messages
-    const responseData = elizaRes.data?.data || elizaRes.data;
-    const messages = Array.isArray(responseData) ? responseData : [responseData];
+    // 2c. Wait for agent response (give it time to process)
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // 2d. Fetch recent messages from the channel to get agent's reply
+    const historyRes = await axios.get(
+      `http://localhost:${ELIZA_PORT}/api/messaging/channels/${channelId}/messages?limit=5`
+    );
+    const allMessages = historyRes.data?.data?.messages || historyRes.data?.data || [];
+    const agentReply = allMessages.find(m => m.author_id !== "user-defiguard" || m.source === "agent");
 
-    if (!messages || messages.length === 0) {
-      throw new Error("ElizaOS model returned an empty response.");
+    if (!agentReply || !agentReply.content) {
+      throw new Error("ElizaOS agent did not respond in time.");
     }
 
-    const rawResponseText = messages[0].text;
+    const rawResponseText = agentReply.content;
 
     // 3. Parse JSON Strict Output
     const cleanedString = cleanJsonResponse(rawResponseText);

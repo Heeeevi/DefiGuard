@@ -40,19 +40,19 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     // 1. Fetch available agents from ElizaOS v2 framework
-    // ElizaOS v2 returns: { success: true, data: [{ agentId, name, status }] }
-    const agentsRes = await axios.get(`http://localhost:${ELIZA_PORT}/agents`);
-
-    // Support both v1 format { agents: [] } and v2 format { data: [] }
-    const agents = agentsRes.data?.data || agentsRes.data?.agents || agentsRes.data;
-
-    if (!agents || !Array.isArray(agents) || agents.length === 0) {
+    // ElizaOS v2 returns: { success: true, data: { agents: [{ id, name, status }] } }
+    const agentsRes = await axios.get(`http://localhost:${ELIZA_PORT}/api/agents`);
+    
+    // ElizaOS v2 format: data.data.agents
+    const agents = agentsRes.data?.data?.agents || agentsRes.data?.data || agentsRes.data?.agents || [];
+    
+    if (!Array.isArray(agents) || agents.length === 0) {
       throw new Error("No ElizaOS agents are currently running.");
     }
 
-    // Grab the first available agent (DeFiGuard or default)
+    // Grab the first available agent
     const agent = agents[0];
-    const agentId = agent.agentId || agent.id;
+    const agentId = agent.id || agent.agentId;
 
     console.log(`Routing to ElizaOS agent: ${agent.name || 'unknown'} (${agentId})`);
 
@@ -64,9 +64,9 @@ app.post('/api/chat', async (req, res) => {
       userName: "user"
     };
 
-    // ElizaOS v2 message endpoint: /agents/:agentId/message
+    // ElizaOS v2 message endpoint: /api/agents/:id/message
     const elizaRes = await axios.post(
-      `http://localhost:${ELIZA_PORT}/agents/${agentId}/message`,
+      `http://localhost:${ELIZA_PORT}/api/agents/${agentId}/message`, 
       messagePayload,
       { timeout: 30000 }
     );
